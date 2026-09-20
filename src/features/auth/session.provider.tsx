@@ -37,7 +37,7 @@ export function SessionProvider({
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const isAuthenticated = token !== null;
+    const isAuthenticated = token !== null && user !== null;
 
     useEffect(() => {
         restoreSession();

@@ -1,3 +1,8 @@
+export type UserRole =
+    | "ADMIN"
+    | "ACADEMIC"
+    | "TEACHER"
+    | "STUDENT";
 export type LoginCredentials = {
   email: string;
   password: string;
@@ -40,3 +45,4 @@ export type MeResponse = {
     data: User;
     timestamp: string;
 };
+
