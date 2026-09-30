@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -8,6 +7,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 import { AppButton } from "@/components/ui/AppButton";
 import { theme } from "@/constants/theme";
@@ -57,18 +57,52 @@ export default function StudentAttendanceScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.center}>
-          <ActivityIndicator
-            size="large"
-            color={theme.colors.primary}
-          />
-
-          <Text style={styles.loadingText}>
-            Cargando asistencia...
-          </Text>
+     <SafeAreaView style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Encabezado */}
+        <View style={styles.skeletonHeader}>
+          <Skeleton width="45%" height={28} borderRadius={8} />
+          <Skeleton width="55%" height={14} borderRadius={5} />
         </View>
-      </SafeAreaView>
+
+        {/* Presentes */}
+        <View style={styles.card}>
+          <Skeleton width="35%" height={18} borderRadius={6} />
+          <Skeleton width={28} height={28} borderRadius={6} />
+        </View>
+
+        {/* Ausentes */}
+        <View style={styles.card}>
+          <Skeleton width="35%" height={18} borderRadius={6} />
+          <Skeleton width={28} height={28} borderRadius={6} />
+        </View>
+
+        {/* Tardanzas */}
+        <View style={styles.card}>
+          <Skeleton width="40%" height={18} borderRadius={6} />
+          <Skeleton width={28} height={28} borderRadius={6} />
+        </View>
+
+        {/* Justificadas */}
+        <View style={styles.card}>
+          <Skeleton width="45%" height={18} borderRadius={6} />
+          <Skeleton width={28} height={28} borderRadius={6} />
+        </View>
+
+        {/* Historial */}
+        <View style={styles.historyCard}>
+          <Skeleton width="30%" height={20} borderRadius={6} />
+
+          <View style={styles.skeletonHistoryContent}>
+            <Skeleton width="85%" height={14} borderRadius={5} />
+            <Skeleton width="65%" height={14} borderRadius={5} />
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
     );
   }
 
@@ -226,11 +260,6 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
 
-  loadingText: {
-    textAlign: "center",
-    color: theme.colors.textSecondary,
-  },
-
   errorTitle: {
     fontSize: theme.fontSize.lg,
     fontWeight: "700",
@@ -284,4 +313,14 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: theme.spacing.md,
   },
+
+  skeletonHeader: {
+  gap: theme.spacing.sm,
+  marginBottom: theme.spacing.sm,
+},
+
+skeletonHistoryContent: {
+  gap: theme.spacing.sm,
+  marginTop: theme.spacing.sm,
+},
 });

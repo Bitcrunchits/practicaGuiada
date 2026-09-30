@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 
+import { AppLogo } from "@/components/ui/AppLogo";
 import { AppButton } from "@/components/ui/AppButton";
 import { useSession } from "@/features/auth/useSession";
 import { theme } from "@/constants/theme";
@@ -20,6 +21,8 @@ export default function TeacherHomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
+
+        <AppLogo size="large" />
 
         {/* Encabezado */}
         <View style={styles.header}>
@@ -40,7 +43,7 @@ export default function TeacherHomeScreen() {
         <View style={styles.options}>
 
           <View style={styles.card}>
-            <Text style={styles.cardIcon}>📋</Text>
+            
 
             <View style={styles.cardContent}>
               <Text style={styles.cardTitle}>
@@ -63,7 +66,7 @@ export default function TeacherHomeScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardIcon}>👤</Text>
+            
 
             <View style={styles.cardContent}>
               <Text style={styles.cardTitle}>
@@ -159,11 +162,6 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
 
     minHeight: 64,
-  },
-
-  cardIcon: {
-    fontSize: 23,
-    marginRight: theme.spacing.md,
   },
 
   cardContent: {

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,6 +8,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 import { AppButton } from "@/components/ui/AppButton";
 import { theme } from "@/constants/theme";
@@ -59,17 +59,46 @@ export default function StudentSubjectScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.center}>
-          <ActivityIndicator
-            size="large"
-            color={theme.colors.primary}
-          />
-
-          <Text style={styles.loadingText}>
-            Cargando materia...
-          </Text>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Encabezado */}
+        <View style={styles.skeletonHeader}>
+          <Skeleton width="75%" height={28} borderRadius={8} />
+          <Skeleton width="30%" height={16} borderRadius={6} />
         </View>
-      </SafeAreaView>
+
+        {/* Información */}
+        <View style={styles.card}>
+          <Skeleton width="40%" height={20} borderRadius={6} />
+          <Skeleton width="65%" height={14} borderRadius={5} />
+          <Skeleton width="50%" height={14} borderRadius={5} />
+          <Skeleton width="60%" height={14} borderRadius={5} />
+          <Skeleton width="55%" height={14} borderRadius={5} />
+          <Skeleton width="70%" height={14} borderRadius={5} />
+        </View>
+
+        {/* Mi cursada */}
+        <View style={styles.card}>
+          <Skeleton width="35%" height={20} borderRadius={6} />
+          <Skeleton width="45%" height={14} borderRadius={5} />
+          <Skeleton width="70%" height={14} borderRadius={5} />
+          <Skeleton width="60%" height={14} borderRadius={5} />
+          <Skeleton width="40%" height={14} borderRadius={5} />
+        </View>
+
+        {/* Asistencia */}
+        <View style={styles.skeletonAction}>
+          <View style={styles.skeletonActionContent}>
+            <Skeleton width="45%" height={20} borderRadius={6} />
+            <Skeleton width="65%" height={14} borderRadius={5} />
+          </View>
+
+          <Skeleton width={10} height={28} borderRadius={4} />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
     );
   }
 
@@ -292,11 +321,7 @@ const styles = StyleSheet.create({
     gap: theme.spacing.md,
   },
 
-  loadingText: {
-    textAlign: "center",
-    color: theme.colors.textSecondary,
-  },
-
+  
   errorTitle: {
     fontSize: theme.fontSize.lg,
     fontWeight: "700",
@@ -377,4 +402,24 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: theme.spacing.md,
   },
+
+  skeletonHeader: {
+  gap: theme.spacing.sm,
+  marginBottom: theme.spacing.sm,
+},
+
+skeletonAction: {
+  flexDirection: "row",
+  alignItems: "center",
+  backgroundColor: theme.colors.surface,
+  padding: theme.spacing.md,
+  borderRadius: theme.radius.lg,
+  borderWidth: 1,
+  borderColor: theme.colors.border,
+},
+
+skeletonActionContent: {
+  flex: 1,
+  gap: theme.spacing.sm,
+},
 });

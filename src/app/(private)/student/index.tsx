@@ -45,7 +45,7 @@ export default function StudentHomeScreen() {
             style={styles.card}
             onPress={() => router.push("/(private)/student/careers")}
           >
-            <Text style={styles.cardIcon}>🎓</Text>
+            
 
             <View style={styles.cardContent}>
               <Text style={styles.cardTitle}>
@@ -61,7 +61,7 @@ export default function StudentHomeScreen() {
           </Pressable>
 
           <View style={styles.card}>
-            <Text style={styles.cardIcon}>📝</Text>
+            
 
             <View style={styles.cardContent}>
               <Text style={styles.cardTitle}>
@@ -77,7 +77,7 @@ export default function StudentHomeScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardIcon}>📅</Text>
+            
 
             <View style={styles.cardContent}>
               <Text style={styles.cardTitle}>
@@ -93,7 +93,7 @@ export default function StudentHomeScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardIcon}>👤</Text>
+            
 
             <View style={styles.cardContent}>
               <Text style={styles.cardTitle}>

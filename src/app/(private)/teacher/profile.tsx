@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { router } from "expo-router";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 import { AppButton } from "@/components/ui/AppButton";
 import { useSession } from "@/features/auth/useSession";
@@ -46,12 +46,54 @@ export default function TeacherProfileScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" />
-        <Text style={styles.loadingText}>
-          Cargando perfil...
-        </Text>
+      <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.container}
+    >
+      {/* Encabezado */}
+      <View style={styles.skeletonHeader}>
+        <Skeleton width="25%" height={14} borderRadius={5} />
+        <Skeleton width="65%" height={28} borderRadius={7} />
+        <Skeleton width="25%" height={18} borderRadius={5} />
       </View>
+
+      {/* Información personal */}
+      <View style={styles.card}>
+        <Skeleton width="55%" height={22} borderRadius={6} />
+
+        <View style={styles.skeletonFields}>
+          <View style={styles.skeletonField}>
+            <Skeleton width="30%" height={13} borderRadius={5} />
+            <Skeleton width="45%" height={18} borderRadius={5} />
+          </View>
+
+          <View style={styles.skeletonField}>
+            <Skeleton width="25%" height={13} borderRadius={5} />
+            <Skeleton width="35%" height={18} borderRadius={5} />
+          </View>
+
+          <View style={styles.skeletonField}>
+            <Skeleton width="20%" height={13} borderRadius={5} />
+            <Skeleton width="70%" height={18} borderRadius={5} />
+          </View>
+
+          <View style={styles.skeletonField}>
+            <Skeleton width="25%" height={13} borderRadius={5} />
+            <Skeleton width="50%" height={18} borderRadius={5} />
+          </View>
+        </View>
+      </View>
+
+      {/* Estado */}
+      <View style={styles.card}>
+        <Skeleton width="50%" height={22} borderRadius={6} />
+
+        <View style={styles.skeletonStatus}>
+          <Skeleton width={10} height={10} borderRadius={5} />
+          <Skeleton width="25%" height={18} borderRadius={5} />
+        </View>
+      </View>
+    </ScrollView>
     );
   }
 
@@ -175,11 +217,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
 
-  loadingText: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.fontSize.md,
-  },
-
   errorText: {
     color: theme.colors.error,
     fontSize: theme.fontSize.md,
@@ -266,4 +303,27 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     fontWeight: "600",
   },
+
+  skeletonHeader: {
+  backgroundColor: theme.colors.primaryDark,
+  padding: theme.spacing.lg,
+  borderRadius: theme.radius.lg,
+  gap: theme.spacing.sm,
+},
+
+skeletonFields: {
+  marginTop: theme.spacing.md,
+  gap: theme.spacing.md,
+},
+
+skeletonField: {
+  gap: theme.spacing.xs,
+},
+
+skeletonStatus: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: theme.spacing.sm,
+  marginTop: theme.spacing.md,
+},
 });

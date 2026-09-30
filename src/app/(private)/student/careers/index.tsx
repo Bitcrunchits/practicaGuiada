@@ -93,9 +93,7 @@ export default function StudentCareersScreen() {
             }
           >
 
-            <Text style={styles.icon}>
-              🎓
-            </Text>
+            
 
             <View style={styles.cardContent}>
               <Text style={styles.careerName}>

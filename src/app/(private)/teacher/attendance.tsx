@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -8,11 +7,12 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 
+import { Skeleton } from "@/components/ui/Skeleton";
 import { AppButton } from "@/components/ui/AppButton";
 import { theme } from "@/constants/theme";
 import { useSession } from "@/features/auth/useSession";
 import { getMyCourseOfferings } from "@/features/teacher/services/teacher.service";
-import { CourseOffering } from "@/features/teacher/teacher.types";
+import { CourseOffering } from "@/features/teacher/services/teacher.types";
 
 export default function TeacherAttendanceScreen() {
   const { token } = useSession();
@@ -43,13 +43,48 @@ export default function TeacherAttendanceScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" />
+      <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.container}
+    >
+      {/* Título */}
+      <Skeleton width="40%" height={28} borderRadius={8} />
 
-        <Text style={styles.loadingText}>
-          Cargando cursadas...
-        </Text>
+      {/* Subtítulo */}
+      <Skeleton width="55%" height={18} borderRadius={6} />
+
+      {/* Cursada 1 */}
+      <View style={styles.card}>
+        <Skeleton width="65%" height={22} borderRadius={6} />
+
+        <View style={styles.skeletonDetails}>
+          <Skeleton width="40%" height={16} borderRadius={5} />
+          <Skeleton width="35%" height={16} borderRadius={5} />
+          <Skeleton width="70%" height={16} borderRadius={5} />
+          <Skeleton width="45%" height={16} borderRadius={5} />
+        </View>
+
+        <View style={styles.skeletonButton}>
+          <Skeleton width="100%" height={44} borderRadius={8} />
+        </View>
       </View>
+
+      {/* Cursada 2 */}
+      <View style={styles.card}>
+        <Skeleton width="55%" height={22} borderRadius={6} />
+
+        <View style={styles.skeletonDetails}>
+          <Skeleton width="45%" height={16} borderRadius={5} />
+          <Skeleton width="30%" height={16} borderRadius={5} />
+          <Skeleton width="65%" height={16} borderRadius={5} />
+          <Skeleton width="40%" height={16} borderRadius={5} />
+        </View>
+
+        <View style={styles.skeletonButton}>
+          <Skeleton width="100%" height={44} borderRadius={8} />
+        </View>
+      </View>
+    </ScrollView>
     );
   }
 
@@ -134,18 +169,6 @@ const styles = StyleSheet.create({
     gap: theme.spacing.md,
   },
 
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: theme.colors.background,
-  },
-
-  loadingText: {
-    marginTop: theme.spacing.sm,
-    color: theme.colors.textSecondary,
-  },
-
   title: {
     fontSize: theme.fontSize.xl,
     fontWeight: "700",
@@ -201,4 +224,13 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     color: theme.colors.textSecondary,
   },
+
+  skeletonDetails: {
+  gap: theme.spacing.sm,
+  marginTop: theme.spacing.md,
+},
+
+skeletonButton: {
+  marginTop: theme.spacing.md,
+},
 });
