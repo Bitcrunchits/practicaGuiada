@@ -190,6 +190,11 @@ Restructure the teacher experience into the flow the user specified:
   responses so stale data cannot replace the returned session status or success feedback.
 - 2026-11-01: TF-20 independent typecheck, diff checks, web export, and structural
   readback passed; manual device/backend validation remains pending.
+- 2026-11-01: Work-unit commit `1d4c724bb8f89db9b60f87968b18fefcd3580438`
+  on `feat/practica-guiada-flujos` includes the full user-authorized guided-practice
+  worktree (teacher, student, shared UI, configuration, and docs). Rollback boundary:
+  revert this commit to restore the prior app state; native review and device validation
+  remain pending.
 
 ## Files
 
