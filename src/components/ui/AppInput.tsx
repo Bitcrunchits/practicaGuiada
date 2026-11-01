@@ -20,9 +20,12 @@ export function AppInput({
   label,
   error,
   isPassword = false,
+  onFocus,
+  onBlur,
   ...textInputProps
 }: AppInputProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [focused, setFocused] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -31,6 +34,7 @@ export function AppInput({
       <View
         style={[
           styles.inputContainer,
+          focused ? styles.inputContainerFocused : null,
           error ? styles.inputContainerError : null,
         ]}
       >
@@ -38,6 +42,14 @@ export function AppInput({
           style={styles.input}
           placeholderTextColor={theme.colors.textSecondary}
           secureTextEntry={isPassword && !showPassword}
+          onFocus={(event) => {
+            setFocused(true);
+            onFocus?.(event);
+          }}
+          onBlur={(event) => {
+            setFocused(false);
+            onBlur?.(event);
+          }}
           {...textInputProps}
         />
 
@@ -65,31 +77,39 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    marginBottom: theme.spacing.sm,
-    fontSize: theme.fontSize.sm,
-    fontWeight: "600",
-    color: theme.colors.text,
+    marginBottom: 8,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    color: theme.colors.textSecondary,
   },
 
   inputContainer: {
     minHeight: 52,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: theme.spacing.md,
+    paddingHorizontal: 16,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.md,
+    borderColor: theme.colors.ink,
+    borderRadius: 0,
+  },
+
+  inputContainerFocused: {
+    borderColor: theme.colors.primary,
+    borderWidth: 2,
   },
 
   inputContainerError: {
     borderColor: theme.colors.error,
+    borderWidth: 2,
   },
 
   input: {
     flex: 1,
-    paddingVertical: theme.spacing.md,
-    fontSize: theme.fontSize.md,
+    paddingVertical: 16,
+    fontSize: 16,
     color: theme.colors.text,
   },
 
@@ -99,14 +119,16 @@ const styles = StyleSheet.create({
   },
 
   passwordButtonText: {
-    fontSize: theme.fontSize.sm,
-    fontWeight: "600",
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
     color: theme.colors.primary,
   },
 
   errorText: {
-    marginTop: theme.spacing.xs,
-    fontSize: theme.fontSize.xs,
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: "600",
     color: theme.colors.error,
   },
 });

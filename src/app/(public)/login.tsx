@@ -1,5 +1,7 @@
-import { Image, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 
+import { AppCard } from "@/components/ui/AppCard";
+import { AppLogo } from "@/components/ui/AppLogo";
 import { Screen } from "@/components/ui/Screen";
 import { LoginForm } from "@/features/auth/components/LoginForm";
 
@@ -7,12 +9,11 @@ export default function LoginScreen() {
   return (
     <Screen style={styles.container}>
 
-      <Image
-        source={require("../../../assets/images/logo-its.png")}
-        style={styles.logo}
-      />
+      <AppLogo size="large" />
 
-      <LoginForm />
+      <AppCard style={styles.card}>
+        <LoginForm />
+      </AppCard>
 
     </Screen>
   );
@@ -23,11 +24,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  logo: {
-    width: 250,
-    height: 100,
-    resizeMode: "contain",
-    alignSelf: "center",
-    marginBottom: 20,
+  card: {
+    padding: 24,
   },
 });

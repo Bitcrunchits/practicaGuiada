@@ -1,54 +1,74 @@
 export const colors = {
-  primary: "#2563EB",
-  primaryDark: "#1D4ED8",
+  navy: "#0E2A47",
+  navyDark: "#081B2E",
+  ink: "#0B1220",
 
-  background: "#F8FAFC",
+  primary: "#2F5FA8",
+  primaryDark: "#244A86",
+
+  accent: "#6DBE45",
+  accentDark: "#1F6B3A",
+  green: "#6DBE45",
+  greenDark: "#1F6B3A",
+
+  background: "#F2F4F7",
   surface: "#FFFFFF",
+  surfaceMuted: "#E9EDF2",
 
-  text: "#0F172A",
-  textSecondary: "#64748B",
+  text: "#0B1220",
+  textSecondary: "#5B6675",
+  textInverse: "#FFFFFF",
 
-  border: "#E2E8F0",
+  border: "#0B1220",
+  borderSubtle: "#CBD5E1",
+  skeleton: "#DDE3EA",
 
-  error: "#DC2626",
-  errorBackground: "#FEE2E2",
+  error: "#B42318",
+  errorBackground: "#FEE4E2",
 
-  success: "#16A34A",
-  successBackground: "#DCFCE7",
+  success: "#1F6B3A",
+  successBackground: "#E7F6EC",
 
-  info: "#2563EB",
-  infoBackground: "#DBEAFE",
+  info: "#2F5FA8",
+  infoBackground: "#E8F0FA",
+
+  warning: "#B54708",
+  warningBackground: "#FEF0C7",
 
   white: "#FFFFFF",
   black: "#000000",
 };
 
 export const spacing = {
-    xs: 4,
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32,
-    xxl: 48,
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+  xxl: 48,
 };
+
 export const radius = {
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 24,
+  none: 0,
+  sm: 0,
+  md: 0,
+  lg: 0,
+  xl: 0,
+  pill: 0,
 };
 
 export const fontSize = {
-    xs: 12,
-    sm: 14,
-    md: 16,
-    lg: 20,
-    xl: 28,
-    xxl: 36,
+  xs: 12,
+  sm: 14,
+  md: 16,
+  lg: 20,
+  xl: 28,
+  xxl: 36,
 };
+
 export const theme = {
-    colors,
-    spacing,
-    radius,
-    fontSize,
+  colors,
+  spacing,
+  radius,
+  fontSize,
 };

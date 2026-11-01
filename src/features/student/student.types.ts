@@ -158,6 +158,108 @@ export type StudentSubjectDetailResponse = {
   timestamp: string;
 };
 
+const ENROLLMENT_STATUS = {
+  ACTIVE: "ACTIVE",
+  DROPPED: "DROPPED",
+  COMPLETED: "COMPLETED",
+  VOID: "VOID",
+} as const;
+
+export type StudentEnrollmentStatus =
+  (typeof ENROLLMENT_STATUS)[keyof typeof ENROLLMENT_STATUS];
+
+const ENROLLMENT_CONDITION = {
+  IN_PROGRESS: "IN_PROGRESS",
+  REGULAR: "REGULAR",
+  NOT_REGULAR: "NOT_REGULAR",
+  PROMOTED: "PROMOTED",
+  ABANDONED: "ABANDONED",
+} as const;
+
+export type StudentEnrollmentCondition =
+  (typeof ENROLLMENT_CONDITION)[keyof typeof ENROLLMENT_CONDITION];
+
+const ENROLLMENT_SHIFT = {
+  MORNING: "MORNING",
+  AFTERNOON: "AFTERNOON",
+  EVENING: "EVENING",
+  VIRTUAL: "VIRTUAL",
+  MIXED: "MIXED",
+} as const;
+
+export type StudentEnrollmentShift =
+  (typeof ENROLLMENT_SHIFT)[keyof typeof ENROLLMENT_SHIFT];
+
+export type StudentEnrollmentSubject = {
+  id: string;
+  careerId: string;
+  name: string;
+  code: string;
+  year: number;
+  semester: number;
+  isActive?: boolean;
+};
+
+export type StudentEnrollmentAcademicYear = {
+  id: string;
+  year: number;
+  name: string;
+};
+
+export type StudentEnrollmentTeacher = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  employeeNumber?: string;
+  email?: string | null;
+};
+
+export type StudentEnrollmentCourseOffering = {
+  id: string;
+  subjectId: string;
+  academicYearId: string;
+  teacherId: string;
+  commission: string;
+  shift: StudentEnrollmentShift;
+  dayOfWeek?: number | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  classroom?: string | null;
+  maxCapacity?: number | null;
+  isActive: boolean;
+  subject: StudentEnrollmentSubject;
+  academicYear: StudentEnrollmentAcademicYear;
+  teacher?: StudentEnrollmentTeacher | null;
+};
+
+export type StudentEnrollment = {
+  id: string;
+  courseOfferingId: string;
+  studentId: string;
+  status: StudentEnrollmentStatus;
+  condition: StudentEnrollmentCondition;
+  resultStatus?: string | null;
+  courseAverage?: number | null;
+  finalGrade?: number | null;
+  observation?: string | null;
+  closedAt?: string | null;
+  closedById?: string | null;
+  resultObservation?: string | null;
+  resultSetAt?: string | null;
+  enrolledAt: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+  student?: unknown;
+  courseOffering?: StudentEnrollmentCourseOffering | null;
+};
+
+export type StudentEnrollmentsResponse = {
+  success: true;
+  data: StudentEnrollment[];
+  timestamp: string;
+};
+
 export type StudentAttendanceTotals = {
   PRESENT: number;
   ABSENT: number;
@@ -165,12 +267,31 @@ export type StudentAttendanceTotals = {
   JUSTIFIED: number;
 };
 
+export type StudentAttendanceClassSession = {
+  id?: string;
+  date?: string;
+  topic?: unknown;
+  status?: string;
+};
+
+export type StudentAttendanceRecord = {
+  id?: string;
+  classSessionId?: string;
+  status?: string;
+  observation?: unknown;
+  markedAt?: string;
+  classSession?: StudentAttendanceClassSession | null;
+  session?: StudentAttendanceClassSession | null;
+  date?: string;
+  topic?: unknown;
+};
+
 export type StudentAttendanceData = {
   totals: StudentAttendanceTotals;
 
-  // Todavía no conocemos la estructura interna
-  // porque el backend devolvió [].
-  records: unknown[];
+  // The OpenAPI declares this as a generic object, so records are read
+  // defensively and may miss any of the optional fields.
+  records: StudentAttendanceRecord[];
 };
 
 export type StudentAttendanceResponse = {

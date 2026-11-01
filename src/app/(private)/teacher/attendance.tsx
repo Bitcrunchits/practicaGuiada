@@ -1,236 +1,274 @@
 import { useEffect, useState } from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 
-import { Skeleton } from "@/components/ui/Skeleton";
 import { AppButton } from "@/components/ui/AppButton";
+import { AppCard } from "@/components/ui/AppCard";
+import { AppScreenHeader } from "@/components/ui/AppScreenHeader";
+import { FeedbackState } from "@/components/ui/FeedbackState";
+import { Screen } from "@/components/ui/Screen";
+import { ScreenFooter } from "@/components/ui/ScreenFooter";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { theme } from "@/constants/theme";
 import { useSession } from "@/features/auth/useSession";
 import { getMyCourseOfferings } from "@/features/teacher/services/teacher.service";
 import { CourseOffering } from "@/features/teacher/services/teacher.types";
 
+const OFFERINGS_STATUS = {
+  LOADING: "loading",
+  SUCCESS: "success",
+  ERROR: "error",
+} as const;
+
+type OfferingsStatus =
+  (typeof OFFERINGS_STATUS)[keyof typeof OFFERINGS_STATUS];
+
+const SKELETON_ROWS = [1, 2, 3];
+
+const DAY_LABELS: Record<number, string> = {
+  0: "Domingo",
+  1: "Lunes",
+  2: "Martes",
+  3: "Miércoles",
+  4: "Jueves",
+  5: "Viernes",
+  6: "Sábado",
+  7: "Domingo",
+};
+
+function getTrimmedValue(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function getSubjectTitle(offering: CourseOffering): string {
+  return getTrimmedValue(offering.subject?.name) || "Materia sin nombre";
+}
+
+function getOfferingSubtitle(offering: CourseOffering): string {
+  const commission = getTrimmedValue(offering.commission);
+  const shift = getTrimmedValue(offering.shift);
+  const parts: string[] = [];
+
+  if (commission) {
+    parts.push(`Comisión ${commission}`);
+  }
+
+  if (shift) {
+    parts.push(`Turno ${shift}`);
+  }
+
+  return parts.length > 0 ? parts.join(" · ") : "Cursada sin datos";
+}
+
+function getScheduleLabel(offering: CourseOffering): string {
+  const dayLabel = DAY_LABELS[offering.dayOfWeek] ?? "";
+  const startTime = getTrimmedValue(offering.startTime);
+  const endTime = getTrimmedValue(offering.endTime);
+  const timeRange =
+    startTime && endTime
+      ? `${startTime} - ${endTime}`
+      : startTime || endTime;
+
+  return [dayLabel, timeRange].filter(Boolean).join(" · ") || "A confirmar";
+}
+
+function getClassroomLabel(offering: CourseOffering): string {
+  return getTrimmedValue(offering.classroom) || "A confirmar";
+}
+
 export default function TeacherAttendanceScreen() {
   const { token } = useSession();
 
   const [offerings, setOfferings] = useState<CourseOffering[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [status, setStatus] = useState<OfferingsStatus>(
+    OFFERINGS_STATUS.LOADING
+  );
+  const [errorMessage, setErrorMessage] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadOfferings = async () => {
       if (!token) {
-        setIsLoading(false);
+        setErrorMessage(
+          "No pudimos validar tu sesión. Volvé a iniciar sesión."
+        );
+        setStatus(OFFERINGS_STATUS.ERROR);
         return;
       }
+
+      setStatus(OFFERINGS_STATUS.LOADING);
+      setErrorMessage("");
 
       try {
         const response = await getMyCourseOfferings(token);
 
+        if (cancelled) {
+          return;
+        }
+
+        if (!Array.isArray(response.data)) {
+          setErrorMessage(
+            "La respuesta del servidor no es válida. Volvé a intentarlo."
+          );
+          setStatus(OFFERINGS_STATUS.ERROR);
+          return;
+        }
+
         setOfferings(response.data);
-      } catch (error) {
-        console.error("ERROR COURSE OFFERINGS:", error);
-      } finally {
-        setIsLoading(false);
+        setStatus(OFFERINGS_STATUS.SUCCESS);
+      } catch {
+        if (cancelled) {
+          return;
+        }
+
+        setErrorMessage(
+          "No pudimos cargar tus cursadas. Revisá tu conexión y volvé a intentarlo."
+        );
+        setStatus(OFFERINGS_STATUS.ERROR);
       }
     };
 
     loadOfferings();
-  }, [token]);
 
-  if (isLoading) {
-    return (
-      <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.container}
-    >
-      {/* Título */}
-      <Skeleton width="40%" height={28} borderRadius={8} />
+    return () => {
+      cancelled = true;
+    };
+  }, [token, reloadKey]);
 
-      {/* Subtítulo */}
-      <Skeleton width="55%" height={18} borderRadius={6} />
+  const handleRetry = () => {
+    setStatus(OFFERINGS_STATUS.LOADING);
+    setErrorMessage("");
+    setReloadKey((current) => current + 1);
+  };
 
-      {/* Cursada 1 */}
-      <View style={styles.card}>
-        <Skeleton width="65%" height={22} borderRadius={6} />
-
-        <View style={styles.skeletonDetails}>
-          <Skeleton width="40%" height={16} borderRadius={5} />
-          <Skeleton width="35%" height={16} borderRadius={5} />
-          <Skeleton width="70%" height={16} borderRadius={5} />
-          <Skeleton width="45%" height={16} borderRadius={5} />
-        </View>
-
-        <View style={styles.skeletonButton}>
-          <Skeleton width="100%" height={44} borderRadius={8} />
-        </View>
-      </View>
-
-      {/* Cursada 2 */}
-      <View style={styles.card}>
-        <Skeleton width="55%" height={22} borderRadius={6} />
-
-        <View style={styles.skeletonDetails}>
-          <Skeleton width="45%" height={16} borderRadius={5} />
-          <Skeleton width="30%" height={16} borderRadius={5} />
-          <Skeleton width="65%" height={16} borderRadius={5} />
-          <Skeleton width="40%" height={16} borderRadius={5} />
-        </View>
-
-        <View style={styles.skeletonButton}>
-          <Skeleton width="100%" height={44} borderRadius={8} />
-        </View>
-      </View>
-    </ScrollView>
-    );
-  }
+  const handleBack = () => {
+    router.back();
+  };
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.container}
+    <Screen
+      header={
+        <AppScreenHeader
+          title="Mis cursadas"
+          subtitle="Materias que tenés asignadas"
+          onBack={handleBack}
+        />
+      }
+      footer={<ScreenFooter onBack={handleBack} />}
     >
-      <Text style={styles.title}>Asistencia</Text>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.sectionTitle}>Cursadas asignadas</Text>
 
-      <Text style={styles.subtitle}>
-        Seleccioná una cursada
-      </Text>
+        {status === OFFERINGS_STATUS.LOADING ? (
+          <View style={styles.list}>
+            {SKELETON_ROWS.map((row) => (
+              <View key={row} style={styles.skeletonCard}>
+                <Skeleton width="65%" height={18} />
+                <Skeleton width="45%" height={14} />
+                <Skeleton width="55%" height={14} />
+                <Skeleton width="40%" height={14} />
+              </View>
+            ))}
+          </View>
+        ) : null}
 
-      {offerings.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>
-            No tenés cursadas asignadas
-          </Text>
+        {status === OFFERINGS_STATUS.ERROR ? (
+          <View style={styles.feedback}>
+            <FeedbackState type="error" message={errorMessage} />
 
-          <Text style={styles.emptyText}>
-            Las cursadas asignadas aparecerán aquí.
-          </Text>
-        </View>
-      ) : (
-        offerings.map((offering) => (
-          <View key={offering.id} style={styles.card}>
-            <Text style={styles.subject}>
-              {offering.subject.name}
-            </Text>
+            <AppButton title="Reintentar" onPress={handleRetry} />
+          </View>
+        ) : null}
 
-            <Text style={styles.detail}>
-              Comisión: {offering.commission}
-            </Text>
+        {status === OFFERINGS_STATUS.SUCCESS && offerings.length === 0 ? (
+          <AppCard
+            title="No tenés cursadas asignadas"
+            subtitle="Cuando te asignen una cursada, aparecerá en esta lista."
+          />
+        ) : null}
 
-            <Text style={styles.detail}>
-              Turno: {offering.shift}
-            </Text>
-
-            <Text style={styles.detail}>
-              Horario: {offering.startTime} - {offering.endTime}
-            </Text>
-
-            <Text style={styles.detail}>
-              Aula: {offering.classroom}
-            </Text>
-
-            <View style={styles.buttonContainer}>
-              <AppButton
-                title="Ver alumnos"
+        {status === OFFERINGS_STATUS.SUCCESS && offerings.length > 0 ? (
+          <View style={styles.list}>
+            {offerings.map((offering) => (
+              <AppCard
+                key={offering.id}
+                title={getSubjectTitle(offering)}
+                subtitle={getOfferingSubtitle(offering)}
                 onPress={() =>
                   router.push({
                     pathname:
                       "/(private)/teacher/attendance/[offeringId]",
                     params: {
                       offeringId: offering.id,
+                      subjectName: getTrimmedValue(
+                        offering.subject?.name
+                      ),
+                      commission: getTrimmedValue(
+                        offering.commission
+                      ),
                     },
                   })
                 }
-              />
-            </View>
-          </View>
-        ))
-      )}
+              >
+                <Text style={styles.detailText}>
+                  Horario: {getScheduleLabel(offering)}
+                </Text>
 
-      <AppButton
-        title="Volver"
-        onPress={() => router.back()}
-      />
-    </ScrollView>
+                <Text style={styles.detailText}>
+                  Aula: {getClassroomLabel(offering)}
+                </Text>
+              </AppCard>
+            ))}
+          </View>
+        ) : null}
+      </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
+  scroll: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
 
-  container: {
-    padding: theme.spacing.lg,
+  content: {
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
     gap: theme.spacing.md,
   },
 
-  title: {
-    fontSize: theme.fontSize.xl,
-    fontWeight: "700",
-    color: theme.colors.text,
-  },
-
-  subtitle: {
-    fontSize: theme.fontSize.md,
-    color: theme.colors.textSecondary,
-  },
-
-  card: {
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.lg,
-    borderRadius: theme.radius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-
-  subject: {
-    fontSize: theme.fontSize.lg,
-    fontWeight: "700",
+  sectionTitle: {
     color: theme.colors.primary,
-    marginBottom: theme.spacing.sm,
-  },
-
-  detail: {
-    fontSize: theme.fontSize.md,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xs,
-  },
-
-  buttonContainer: {
-    marginTop: theme.spacing.md,
-  },
-
-  empty: {
-    padding: theme.spacing.lg,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-
-  emptyTitle: {
     fontSize: theme.fontSize.lg,
     fontWeight: "700",
-    color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
   },
 
-  emptyText: {
-    fontSize: theme.fontSize.md,
+  list: {
+    gap: theme.spacing.sm,
+  },
+
+  skeletonCard: {
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    borderRadius: theme.radius.none,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: theme.spacing.sm,
+  },
+
+  feedback: {
+    paddingTop: theme.spacing.md,
+    gap: theme.spacing.sm,
+  },
+
+  detailText: {
+    fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
   },
-
-  skeletonDetails: {
-  gap: theme.spacing.sm,
-  marginTop: theme.spacing.md,
-},
-
-skeletonButton: {
-  marginTop: theme.spacing.md,
-},
 });

@@ -1,9 +1,11 @@
 import { apiRequest } from "@/lib/api/api.client";
 
-import { StudentStudyPlanResponse,
-    StudentSubjectDetailResponse,
-    StudentAttendanceResponse,
- } from "../student.types";
+import {
+  StudentAttendanceResponse,
+  StudentEnrollmentsResponse,
+  StudentStudyPlanResponse,
+  StudentSubjectDetailResponse,
+} from "../student.types";
 
 export async function getMyStudyPlan(
   token: string
@@ -35,7 +37,21 @@ export async function getMyAttendance(
   token: string
 ): Promise<StudentAttendanceResponse> {
   return apiRequest<StudentAttendanceResponse>(
-    `/students/me/attendance?courseOfferingId=${courseOfferingId}`,
+    `/students/me/attendance?courseOfferingId=${encodeURIComponent(
+      courseOfferingId
+    )}`,
+    {
+      method: "GET",
+      token,
+    }
+  );
+}
+
+export async function getMyEnrollments(
+  token: string
+): Promise<StudentEnrollmentsResponse> {
+  return apiRequest<StudentEnrollmentsResponse>(
+    "/students/me/enrollments",
     {
       method: "GET",
       token,

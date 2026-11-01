@@ -265,13 +265,15 @@ export default function StudentSubjectScreen() {
                   // Este ID viene del backend.
                   // No está escrito manualmente.
                   courseOfferingId: offering.id,
+
+                  subjectName: subject.name,
                 },
               })
             }
           >
             <View style={styles.actionContent}>
               <Text style={styles.actionTitle}>
-                📋 Asistencia
+                Asistencia
               </Text>
 
               <Text style={styles.actionDescription}>

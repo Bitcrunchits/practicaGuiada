@@ -16,7 +16,7 @@ type SkeletonProps = {
 export function Skeleton({
     width = "100%",
     height = 16,
-    borderRadius = 8,
+    borderRadius = 0,
 }: SkeletonProps) {
 
     const opacity = useRef(
@@ -72,7 +72,7 @@ export function SubjectCardSkeleton() {
             <Skeleton
                 width={42}
                 height={42}
-                borderRadius={21}
+                borderRadius={0}
             />
 
             <View style={styles.cardContent}>
@@ -97,7 +97,7 @@ export function SubjectCardSkeleton() {
             <Skeleton
                 width={8}
                 height={22}
-                borderRadius={4}
+                borderRadius={0}
             />
 
         </View>
@@ -122,7 +122,7 @@ export function YearCardSkeleton() {
             <Skeleton
                 width={8}
                 height={22}
-                borderRadius={4}
+                borderRadius={0}
             />
 
         </View>
@@ -132,11 +132,11 @@ export function CareerCardSkeleton() {
     return (
         <View style={styles.card}>
 
-            {/* Simula el icono 🎓 */}
+            {/* Simula el icono de la carrera */}
             <Skeleton
                 width={42}
                 height={42}
-                borderRadius={21}
+                borderRadius={0}
             />
 
             {/* Información de la carrera */}
@@ -166,7 +166,7 @@ export function CareerCardSkeleton() {
             <Skeleton
                 width={8}
                 height={22}
-                borderRadius={4}
+                borderRadius={0}
             />
 
         </View>
@@ -175,7 +175,7 @@ export function CareerCardSkeleton() {
 const styles = StyleSheet.create({
 
     skeleton: {
-        backgroundColor: theme.colors.border,
+        backgroundColor: theme.colors.skeleton,
     },
 
     card: {
@@ -184,14 +184,14 @@ const styles = StyleSheet.create({
 
         backgroundColor: theme.colors.surface,
 
-        padding: theme.spacing.md,
+        padding: 16,
 
-        borderRadius: theme.radius.lg,
+        borderRadius: 0,
 
         borderWidth: 1,
         borderColor: theme.colors.border,
 
-        gap: theme.spacing.md,
+        gap: 16,
     },
 
     cardContent: {

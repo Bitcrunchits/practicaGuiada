@@ -67,6 +67,8 @@ export function LoginForm() {
           Bienvenido
         </Text>
 
+        <View style={styles.accentRule} />
+
         <Text style={styles.subtitle}>
           Ingresá tus datos para continuar
         </Text>
@@ -110,29 +112,29 @@ const styles = StyleSheet.create({
     width: "100%",
   },
 
+  header: {
+    alignItems: "flex-start",
+  },
+
   title: {
-    fontSize: theme.fontSize.xxl,
-    fontWeight: "900",
-    color: theme.colors.text,
-    marginBottom: theme.spacing.md,
-    textAlign: "center",
+    fontSize: 28,
+    fontWeight: "800",
+    color: theme.colors.navy,
+    marginBottom: 8,
+    textAlign: "left",
+  },
+
+  accentRule: {
+    width: 48,
+    height: 3,
+    backgroundColor: theme.colors.accent,
+    marginBottom: 16,
   },
 
   subtitle: {
-    fontSize: theme.fontSize.md,
+    fontSize: 14,
     color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xl,
-    textAlign: "center",
-  },
-
-  header: {
-    width: "100%",
-    paddingTop: theme.spacing.lg,
-    paddingVertical: theme.spacing.xs,
-    marginBottom: theme.spacing.xl,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.xl,
+    marginBottom: 24,
+    textAlign: "left",
   },
 });

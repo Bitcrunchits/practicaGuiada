@@ -34,25 +34,34 @@ export function FeedbackState({
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    padding: theme.spacing.md,
-    borderRadius: theme.radius.md,
-    marginBottom: theme.spacing.md,
+    padding: 16,
+    borderRadius: 0,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderLeftWidth: 4,
   },
 
   error: {
     backgroundColor: theme.colors.errorBackground,
+    borderColor: theme.colors.error,
+    borderLeftColor: theme.colors.error,
   },
 
   success: {
     backgroundColor: theme.colors.successBackground,
+    borderColor: theme.colors.success,
+    borderLeftColor: theme.colors.success,
   },
 
   info: {
     backgroundColor: theme.colors.infoBackground,
+    borderColor: theme.colors.info,
+    borderLeftColor: theme.colors.info,
   },
 
   text: {
-    fontSize: theme.fontSize.sm,
+    fontSize: 14,
     color: theme.colors.text,
+    lineHeight: 20,
   },
 });
