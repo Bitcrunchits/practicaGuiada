@@ -5,6 +5,7 @@ import { AppButton } from "@/components/ui/AppButton";
 import { AppCard } from "@/components/ui/AppCard";
 import { AppScreenHeader } from "@/components/ui/AppScreenHeader";
 import { Screen } from "@/components/ui/Screen";
+import { ScreenFooter } from "@/components/ui/ScreenFooter";
 import { useSession } from "@/features/auth/useSession";
 
 export default function StudentHomeScreen() {
@@ -15,18 +16,22 @@ export default function StudentHomeScreen() {
     router.replace("/login");
   };
 
+  const handleBack = () => router.back();
+
   const studentName = user?.profile?.firstName ?? "Alumno";
 
-  return (
+return (
     <Screen
       header={
         <AppScreenHeader
-          showLogo
           title="Portal del Alumno"
           subtitle={studentName}
           meta="Alumno"
+          compact
+          onBack={handleBack}
         />
       }
+      footer={<ScreenFooter onBack={handleBack} />}
     >
       <ScrollView
         contentContainerStyle={styles.content}
@@ -34,7 +39,7 @@ export default function StudentHomeScreen() {
       >
         <AppCard
           title="Mis carreras"
-          subtitle="Plan de estudios"
+          subtitle="Plan de estudios e inscripciones"
           onPress={() => router.push("/(private)/student/careers")}
         />
 
