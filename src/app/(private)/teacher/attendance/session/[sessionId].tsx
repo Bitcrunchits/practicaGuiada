@@ -32,6 +32,9 @@ import type {
 } from "@/features/teacher/services/teacher.types";
 import { ApiError } from "@/lib/api/api.client";
 import { formatSessionDate } from "@/lib/format/date";
+import attendanceDraftStorage, {
+  type AttendanceDraftScope,
+} from "@/lib/storage/attendance-draft";
 
 const SCREEN_STATUS = { LOADING: "loading", SUCCESS: "success", ERROR: "error" } as const;
 
@@ -91,7 +94,7 @@ function buildPendingChanges(
     records.map((record): [string, string] => [record.studentId, record.id])
   );
   const newRecords: MarkAttendanceInput[] = [];
-  const updates: { recordId: string; status: AttendanceStatusValue }[] = [];
+  const updates: { studentId: string; recordId: string; status: AttendanceStatusValue }[] = [];
 
   for (const student of students) {
     const selectedStatus = selectedStatuses[student.id];
@@ -103,7 +106,7 @@ function buildPendingChanges(
     if (!recordId) {
       newRecords.push({ studentId: student.id, status: selectedStatus });
     } else if (savedStatuses[student.id] !== selectedStatus) {
-      updates.push({ recordId, status: selectedStatus });
+      updates.push({ studentId: student.id, recordId, status: selectedStatus });
     }
   }
 
@@ -168,6 +171,8 @@ export default function SessionAttendanceScreen() {
   const [selectedStatuses, setSelectedStatuses] = useState<StatusMap>({});
   const [isSaving, setIsSaving] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
+  const [draftStatuses, setDraftStatuses] = useState<StatusMap>({});
+  const [draftLoaded, setDraftLoaded] = useState(false);
   const isSavingRef = useRef(false);
 
   useEffect(() => {
@@ -203,11 +208,29 @@ export default function SessionAttendanceScreen() {
         attendanceResponse.data.forEach((record) => {
           if (isAttendanceStatusValue(record.status)) nextSavedStatuses[record.studentId] = record.status;
         });
+
+        const draftScopeForLoad: AttendanceDraftScope = {
+          teacherId: loadedSession.createdByTeacherId,
+          courseOfferingId: loadedSession.courseOfferingId,
+          sessionId,
+        };
+        const draft = await attendanceDraftStorage.getDraft(draftScopeForLoad);
+        if (cancelled) return;
+
+        const nextDraftStatuses: StatusMap = {};
+        Object.entries(draft ?? {}).forEach(([studentId, entry]) => {
+          if (isAttendanceStatusValue(entry.status)) nextDraftStatuses[studentId] = entry.status;
+        });
+
         setSession(loadedSession);
         setStudents(studentsResponse.data);
         setRecords(attendanceResponse.data);
         setSavedStatuses(nextSavedStatuses);
-        setSelectedStatuses({ ...nextSavedStatuses });
+        setDraftStatuses(nextDraftStatuses);
+        setSelectedStatuses((current) =>
+          Object.keys(current).length === 0 ? { ...nextSavedStatuses, ...nextDraftStatuses } : current
+        );
+        setDraftLoaded(true);
         setStatus(SCREEN_STATUS.SUCCESS);
       } catch (error) {
         if (!cancelled) fail(getLoadErrorMessage(error));
@@ -227,6 +250,14 @@ export default function SessionAttendanceScreen() {
   const canSave = !isClosed && !isSaving && markedCount > 0 && hasChanges;
   const recordByStudentId = new Map(records.map((record): [string, AttendanceRecord] => [record.studentId, record]));
 
+  const draftScope = session
+    ? {
+        teacherId: session.createdByTeacherId,
+        courseOfferingId: session.courseOfferingId,
+        sessionId,
+      }
+    : null;
+
   const handleRetry = () => {
     setErrorMessage("");
     setStatus(SCREEN_STATUS.LOADING);
@@ -234,9 +265,15 @@ export default function SessionAttendanceScreen() {
   };
 
   const handleSelectStatus = (studentId: string, value: AttendanceStatusValue) => {
-    if (isClosed || isSaving) return;
+    if (isClosed || isSaving || !draftScope) return;
     setSelectedStatuses((current) => ({ ...current, [studentId]: value }));
     setSaveFeedback(null);
+    void attendanceDraftStorage.updateDraft(draftScope, studentId, {
+      studentId,
+      status: value,
+      lastModifiedAt: new Date().toISOString(),
+    });
+    setDraftStatuses((current) => ({ ...current, [studentId]: value }));
   };
 
   const handleMarkAllPresent = () => {
@@ -245,12 +282,23 @@ export default function SessionAttendanceScreen() {
     students.forEach((student) => { nextStatuses[student.id] = "PRESENT"; });
     setSelectedStatuses(nextStatuses);
     setSaveFeedback(null);
+    if (!draftScope) return;
+    const nextDrafts: StatusMap = {};
+    students.forEach((student) => {
+      nextDrafts[student.id] = "PRESENT";
+      void attendanceDraftStorage.updateDraft(draftScope, student.id, {
+        studentId: student.id,
+        status: "PRESENT",
+        lastModifiedAt: new Date().toISOString(),
+      });
+    });
+    setDraftStatuses(nextDrafts);
   };
 
   const handleSave = async () => {
     if (isSavingRef.current) return;
 
-    if (!sessionId || !token) {
+    if (!sessionId || !token || !draftScope) {
       setSaveFeedback({ type: "error", message: "No pudimos validar la clase o tu sesión. Volvé a intentarlo." });
       return;
     }
@@ -271,6 +319,50 @@ export default function SessionAttendanceScreen() {
     setIsSaving(true);
     setSaveFeedback(null);
 
+    // Consultá al servidor antes de reenviar (reintento manual). No sobrescribir
+    // registros del servidor cuando el estado esté incierto: se conserva el borrador.
+    let serverStatuses: StatusMap = {};
+    let serverQueryFailed = false;
+    try {
+      const attendanceResponse = await getSessionAttendance(sessionId, token);
+      if (Array.isArray(attendanceResponse.data)) {
+        attendanceResponse.data.forEach((record) => {
+          if (isAttendanceStatusValue(record.status)) serverStatuses[record.studentId] = record.status;
+        });
+      }
+    } catch {
+      serverQueryFailed = true;
+    }
+
+    let conflictDetected = false;
+    if (!serverQueryFailed) {
+      for (const update of changes.updates) {
+        const serverStatus = serverStatuses[update.studentId];
+        if (serverStatus !== undefined && serverStatus !== update.status) {
+          conflictDetected = true;
+          break;
+        }
+      }
+      if (!conflictDetected) {
+        for (const record of changes.newRecords) {
+          if (serverStatuses[record.studentId] !== undefined) {
+            conflictDetected = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (conflictDetected || serverQueryFailed) {
+      setSaveFeedback({
+        type: "error",
+        message: "No se pudo guardar en el servidor. Tus cambios siguen guardados en este dispositivo.",
+      });
+      setIsSaving(false);
+      isSavingRef.current = false;
+      return;
+    }
+
     let failureCount = 0;
     let savedAnyChange = false;
 
@@ -288,15 +380,22 @@ export default function SessionAttendanceScreen() {
       } catch { failureCount += 1; }
     }
 
-    setSaveFeedback(
-      failureCount > 0
-        ? { type: "error", message: "Algunos cambios no se pudieron guardar. Revisá la lista y volvé a intentarlo." }
-        : { type: "success", message: "Asistencia guardada correctamente." }
-    );
+    if (failureCount > 0) {
+      setSaveFeedback({
+        type: "error",
+        message: "No se pudo guardar en el servidor. Tus cambios siguen guardados en este dispositivo.",
+      });
+      // El borrador local se conserva: no se elimina ni se recarga la pantalla.
+    } else {
+      await attendanceDraftStorage.deleteConfirmedDraft(draftScope).catch(() => {});
+      setDraftStatuses({});
+      setSavedStatuses({ ...savedStatuses, ...selectedStatuses });
+      setSaveFeedback({ type: "success", message: "Asistencia guardada correctamente." });
+      if (savedAnyChange) setReloadKey((current) => current + 1);
+    }
 
-    if (savedAnyChange) setReloadKey((current) => current + 1);
-    isSavingRef.current = false;
     setIsSaving(false);
+    isSavingRef.current = false;
   };
 
   const sessionTopic = typeof session?.topic === "string" ? session.topic.trim() : "";
@@ -344,6 +443,10 @@ export default function SessionAttendanceScreen() {
             <Text style={styles.summary}>
               {students.length} alumnos · {markedCount} marcados
             </Text>
+
+            {draftLoaded && Object.keys(draftStatuses).length > 0 && !isClosed ? (
+              <FeedbackState type="info" message="Borrador guardado en este dispositivo. Pendiente de enviar." />
+            ) : null}
 
             {isClosed ? (
               <FeedbackState type="info" message="La clase está cerrada. La asistencia se muestra en modo lectura." />
