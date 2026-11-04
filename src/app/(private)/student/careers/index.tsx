@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 
@@ -29,6 +29,9 @@ export default function StudentCareersScreen() {
   const [errorMessage, setErrorMessage] = useState("");
   const [plan, setPlan] = useState<StudentStudyPlanResponse["data"] | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [logoutError, setLogoutError] = useState("");
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const signOutInFlight = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,7 +80,20 @@ export default function StudentCareersScreen() {
   };
 
   const handleLogout = async () => {
-    await signOut();
+    if (signOutInFlight.current) return;
+    signOutInFlight.current = true;
+    setIsSigningOut(true);
+    setLogoutError("");
+
+    try {
+      await signOut();
+    } catch {
+      setLogoutError("No se pudo cerrar la sesión. Intenta nuevamente.");
+      setIsSigningOut(false);
+      signOutInFlight.current = false;
+      return;
+    }
+
     router.replace("/login");
   };
 
@@ -186,7 +202,18 @@ export default function StudentCareersScreen() {
 
         <View style={styles.spacer} />
 
-        <AppButton title="Cerrar sesión" variant="secondary" onPress={handleLogout} />
+        {logoutError ? (
+          <View
+            accessible
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+            accessibilityLabel={logoutError}
+          >
+            <FeedbackState type="error" message={logoutError} />
+          </View>
+        ) : null}
+
+        <AppButton title="Cerrar sesión" variant="secondary" onPress={handleLogout} loading={isSigningOut} />
       </ScrollView>
     </Screen>
   );

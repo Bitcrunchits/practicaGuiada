@@ -24,10 +24,6 @@ const PLAN_STATUS = {
 
 type PlanStatus = (typeof PLAN_STATUS)[keyof typeof PLAN_STATUS];
 
-function getSingleParam(value: string | string[] | undefined): string {
-  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
-}
-
 function getAcademicYearLabel(year: unknown): string {
   if (typeof year === "number" && Number.isFinite(year)) return String(year);
   if (typeof year === "string" && year.trim()) return year.trim();
@@ -64,10 +60,10 @@ function getStatusSummary(items: StudentStudyPlanResponse["data"]["items"]) {
   };
 
   for (const item of items) {
-    const status = item.enrollmentStatus?.toUpperCase() ?? "NOT_ENROLLED";
-    if (status === "ENROLLED" || status === "IN_PROGRESS") counts.enrolled++;
-    else if (status === "REGULAR" || status === "PROMOTED" || status === "PASSED" || status === "COMPLETED") counts.passed++;
+    const status = item.enrollmentStatus?.trim().toUpperCase() ?? "NOT_ENROLLED";
+    if (status === "ACTIVE" || status === "ENROLLED" || status === "IN_PROGRESS") counts.enrolled++;
     else if (status === "REGULAR") counts.regular++;
+    else if (status === "PROMOTED" || status === "PASSED" || status === "COMPLETED") counts.passed++;
     else counts.notEnrolled++;
   }
 
@@ -79,7 +75,7 @@ export default function CareerPlanScreen() {
   const params = useLocalSearchParams();
   const careerId = (Array.isArray(params.careerId) ? params.careerId[0] : params.careerId) ?? "";
 
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState<PlanStatus>(PLAN_STATUS.LOADING);
   const [errorMessage, setErrorMessage] = useState("");
   const [plan, setPlan] = useState<StudentStudyPlanResponse["data"] | null>(null);
   const [expandedYears, setExpandedYears] = useState<Record<number, boolean>>({});
@@ -89,12 +85,15 @@ export default function CareerPlanScreen() {
     let cancelled = false;
 
     const loadPlan = async () => {
+      setStatus(PLAN_STATUS.LOADING);
+      setErrorMessage("");
+      setPlan(null);
+
       if (!token || !careerId) {
         setErrorMessage("No pudimos identificar la carrera.");
+        setStatus(PLAN_STATUS.ERROR);
         return;
       }
-
-      setErrorMessage("");
 
       try {
         const response = await getMyStudyPlan(token);
@@ -103,6 +102,7 @@ export default function CareerPlanScreen() {
 
         if (!response.data || response.data.career.id !== careerId) {
           setErrorMessage("La carrera no coincide con tu plan.");
+          setStatus(PLAN_STATUS.ERROR);
           return;
         }
 
@@ -111,9 +111,12 @@ export default function CareerPlanScreen() {
         const yearGroups = buildYearGroups(response.data.items);
         const initialExpanded: Record<number, boolean> = {};
         yearGroups.forEach((g) => (initialExpanded[g.year] = true));
+        setExpandedYears(initialExpanded);
+        setStatus(PLAN_STATUS.SUCCESS);
       } catch {
         if (cancelled) return;
         setErrorMessage("No pudimos cargar el plan de estudios. Revisá tu conexión y volvé a intentarlo.");
+        setStatus(PLAN_STATUS.ERROR);
       }
     };
 
@@ -122,9 +125,11 @@ export default function CareerPlanScreen() {
     return () => {
       cancelled = true;
     };
-  }, [careerId, token]);
+  }, [careerId, token, reloadKey]);
 
   const handleRetry = () => {
+    setStatus(PLAN_STATUS.LOADING);
+    setErrorMessage("");
     setReloadKey((k) => k + 1);
   };
 
@@ -141,7 +146,7 @@ export default function CareerPlanScreen() {
     });
   };
 
-  if (!plan) {
+  if (status === PLAN_STATUS.LOADING) {
     return (
       <Screen
         header={<AppScreenHeader title="Plan de estudios" onBack={handleBack} />}
@@ -155,7 +160,26 @@ export default function CareerPlanScreen() {
     );
   }
 
+  if (status === PLAN_STATUS.ERROR || !plan) {
+    return (
+      <Screen
+        header={<AppScreenHeader title="Plan de estudios" onBack={handleBack} />}
+        footer={<ScreenFooter onBack={handleBack} />}
+      >
+        <View style={styles.errorContainer}>
+          <FeedbackState
+            type="error"
+            message={errorMessage || "No pudimos cargar el plan de estudios."}
+          />
+          <AppButton title="Reintentar" onPress={handleRetry} />
+          <AppButton title="Volver" variant="secondary" onPress={handleBack} />
+        </View>
+      </Screen>
+    );
+  }
+
   const yearGroups = buildYearGroups(plan.items);
+  const statusSummary = getStatusSummary(plan.items);
 
   return (
     <Screen
@@ -183,24 +207,10 @@ export default function CareerPlanScreen() {
         </View>
 
         <View style={styles.chipContainer}>
-          {(() => {
-            const counts = { enrolled: 0, regular: 0, passed: 0, notEnrolled: 0 };
-            for (const item of plan.items) {
-              const status = item.enrollmentStatus?.toUpperCase() ?? "NOT_ENROLLED";
-              if (status === "ENROLLED" || status === "IN_PROGRESS") counts.enrolled++;
-              else if (status === "REGULAR" || status === "PROMOTED" || status === "PASSED" || status === "COMPLETED") counts.passed++;
-              else if (status === "REGULAR") counts.regular++;
-              else counts.notEnrolled++;
-            }
-            return (
-              <View style={styles.chipContainer}>
-                {counts.enrolled > 0 && <Chip label={`${counts.enrolled} Inscriptas`} tone="present" />}
-                {counts.regular > 0 && <Chip label={`${counts.regular} Regulares`} tone="info" />}
-                {counts.passed > 0 && <Chip label={`${counts.passed} Aprobadas`} tone="success" />}
-                {counts.notEnrolled > 0 && <Chip label={`${counts.notEnrolled} Sin inscribir`} tone="neutral" />}
-              </View>
-            );
-          })()}
+          {statusSummary.enrolled > 0 && <Chip label={`${statusSummary.enrolled} Inscriptas`} tone="present" />}
+          {statusSummary.regular > 0 && <Chip label={`${statusSummary.regular} Regulares`} tone="info" />}
+          {statusSummary.passed > 0 && <Chip label={`${statusSummary.passed} Aprobadas`} tone="success" />}
+          {statusSummary.notEnrolled > 0 && <Chip label={`${statusSummary.notEnrolled} Sin inscribir`} tone="neutral" />}
         </View>
 
         {plan.items.length === 0 ? (
@@ -211,51 +221,39 @@ export default function CareerPlanScreen() {
           </AppCard>
         ) : (
           <View>
-            {(() => {
-              const yearGroups: Record<number, typeof plan.items> = {};
-              for (const item of plan.items) {
-                const year = item.year;
-                if (!yearGroups[year]) yearGroups[year] = [];
-                yearGroups[year].push(item);
-              }
-              return Object.entries(yearGroups)
-                .map(([year, subjects]) => ({
-                  year: Number(year),
-                  subjects: subjects.sort((a, b) => a.sortOrder - b.sortOrder),
-                }))
-                .sort((a, b) => a.year - b.year)
-                .map((group) => {
-                  const isExpanded = true;
-                  return (
-                    <View key={group.year} style={styles.yearSection}>
-                      <Pressable style={styles.yearHeader} onPress={() => {}}>
-                        <Text style={styles.yearTitle}>
-                          {group.year}° Año
-                        </Text>
-                        <Text style={styles.yearCount}>
-                          {group.subjects.length} materias
-                        </Text>
-                        <Text style={styles.chevron}>
-                          {"▼"}
-                        </Text>
-                      </Pressable>
+            {yearGroups.map((group) => {
+              const isExpanded = expandedYears[group.year] ?? true;
+              return (
+                <View key={group.year} style={styles.yearSection}>
+                  <Pressable style={styles.yearHeader} onPress={() => handleToggleYear(group.year)}>
+                    <Text style={styles.yearTitle}>
+                      {group.year}° Año
+                    </Text>
+                    <Text style={styles.yearCount}>
+                      {group.subjects.length} materias
+                    </Text>
+                    <Text style={styles.chevron}>
+                      {isExpanded ? "▲" : "▼"}
+                    </Text>
+                  </Pressable>
 
-                      <View style={styles.subjectList}>
-                        {group.subjects.map((item) => (
-                          <SubjectCard
-                            key={item.id}
-                            subject={{
-                              ...item.subject,
-                              enrollmentStatus: item.enrollmentStatus,
-                            }}
-                            onPress={() => {}}
-                          />
-                        ))}
-                      </View>
+                  {isExpanded && (
+                    <View style={styles.subjectList}>
+                      {group.subjects.map((item) => (
+                        <SubjectCard
+                          key={item.id}
+                          subject={{
+                            ...item.subject,
+                            enrollmentStatus: item.enrollmentStatus,
+                          }}
+                          onPress={() => handleSubjectPress(item)}
+                        />
+                      ))}
                     </View>
-                  );
-                })}
-            )()}
+                  )}
+                </View>
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -278,11 +276,11 @@ const styles = StyleSheet.create({
   careerName: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#0B1220",
+    color: theme.colors.ink,
   },
   planInfo: {
     fontSize: 14,
-    color: "#5B6675",
+    color: theme.colors.textSecondary,
   },
   chipContainer: {
     flexDirection: "row",
@@ -299,28 +297,28 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: "#E9EDF2",
+    backgroundColor: theme.colors.surfaceMuted,
     borderRadius: 8,
   },
   yearTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#0E2A47",
+    color: theme.colors.navy,
   },
   yearCount: {
     fontSize: 14,
-    color: "#5B6675",
+    color: theme.colors.textSecondary,
   },
   chevron: {
     fontSize: 14,
-    color: "#5B6675",
+    color: theme.colors.textSecondary,
   },
   subjectList: {
     marginTop: 8,
     gap: 8,
   },
   emptyText: {
-    color: "#5B6675",
+    color: theme.colors.textSecondary,
     textAlign: "center",
   },
   loadingContainer: {
