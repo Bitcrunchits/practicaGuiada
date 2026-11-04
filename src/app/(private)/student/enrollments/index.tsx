@@ -9,6 +9,7 @@ import { FeedbackState } from "@/components/ui/FeedbackState";
 import { Screen } from "@/components/ui/Screen";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { ScreenFooter } from "@/components/ui/ScreenFooter";
 import { theme } from "@/constants/theme";
 import { ApiError } from "@/lib/api/api.client";
 import { useSession } from "@/features/auth/useSession";
@@ -285,6 +286,7 @@ export default function StudentEnrollmentsScreen() {
           title="Mis inscripciones"
           subtitle="Materias en las que estás inscripto"
           onBack={handleBack}
+          compact
         />
       }
     >
@@ -381,6 +383,7 @@ export default function StudentEnrollmentsScreen() {
           </View>
         ) : null}
       </ScrollView>
+      <ScreenFooter onBack={handleBack} />
     </Screen>
   );
 }

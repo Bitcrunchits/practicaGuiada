@@ -7,6 +7,7 @@ import { AppCard } from "@/components/ui/AppCard";
 import { AppScreenHeader } from "@/components/ui/AppScreenHeader";
 import { FeedbackState } from "@/components/ui/FeedbackState";
 import { Screen } from "@/components/ui/Screen";
+import { ScreenFooter } from "@/components/ui/ScreenFooter";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { theme } from "@/constants/theme";
@@ -30,35 +31,17 @@ const ATTENDANCE_STATUS = {
   ERROR: "error",
 } as const;
 
-type AttendanceStatus =
-  (typeof ATTENDANCE_STATUS)[keyof typeof ATTENDANCE_STATUS];
+type AttendanceStatus = (typeof ATTENDANCE_STATUS)[keyof typeof ATTENDANCE_STATUS];
 
 type AttendanceRouteParams = {
   courseOfferingId?: string | string[];
   subjectName?: string | string[];
 };
 
-const TOTAL_CARDS = [
-  { key: "PRESENT", label: "Presentes" },
-  { key: "ABSENT", label: "Ausentes" },
-  { key: "LATE", label: "Tardanzas" },
-  { key: "JUSTIFIED", label: "Justificadas" },
-] as const;
-
-const SKELETON_TOTALS = [1, 2, 3, 4];
-
-const EMPTY_TOTALS: StudentAttendanceTotals = {
-  PRESENT: 0,
-  ABSENT: 0,
-  LATE: 0,
-  JUSTIFIED: 0,
-};
-
 function getSingleParam(
   value: string | string[] | undefined
 ): string {
   const rawValue = Array.isArray(value) ? value[0] : value;
-
   return rawValue?.trim() ?? "";
 }
 
@@ -211,6 +194,27 @@ function getAttendanceErrorMessage(error: unknown): string {
   return "No pudimos cargar la asistencia. Revisá tu conexión y volvé a intentarlo.";
 }
 
+const ATTENDANCE_TYPES = [
+  { key: "PRESENT", label: "Presentes", tone: "present" as const, icon: "●" },
+  { key: "ABSENT", label: "Ausentes", tone: "absent" as const, icon: "●" },
+  { key: "LATE", label: "Tardanzas", tone: "late" as const, icon: "●" },
+  { key: "JUSTIFIED", label: "Justificadas", tone: "justified" as const, icon: "●" },
+] as const;
+
+const TOTAL_CARDS = [
+  { key: "PRESENT", label: "Presentes" },
+  { key: "ABSENT", label: "Ausentes" },
+  { key: "LATE", label: "Tardanzas" },
+  { key: "JUSTIFIED", label: "Justificadas" },
+] as const;
+
+const EMPTY_TOTALS: StudentAttendanceTotals = {
+  PRESENT: 0,
+  ABSENT: 0,
+  LATE: 0,
+  JUSTIFIED: 0,
+};
+
 export default function StudentAttendanceScreen() {
   const { token } = useSession();
   const params = useLocalSearchParams<AttendanceRouteParams>();
@@ -306,10 +310,12 @@ export default function StudentAttendanceScreen() {
   const sortedRecords = attendance
     ? sortAttendanceRecords(attendance.records)
     : [];
-  const recordsCountLabel =
-    sortedRecords.length === 1
-      ? "1 registro"
-      : `${sortedRecords.length} registros`;
+  const totalClasses =
+    totals.PRESENT + totals.ABSENT + totals.LATE + totals.JUSTIFIED;
+  const attended =
+    totals.PRESENT + totals.LATE + totals.JUSTIFIED;
+  const attendanceRate =
+    totalClasses > 0 ? Math.round((attended / totalClasses) * 100) : 0;
 
   return (
     <Screen
@@ -318,8 +324,10 @@ export default function StudentAttendanceScreen() {
           title="Asistencia"
           subtitle={headerSubtitle}
           onBack={handleBack}
+          compact
         />
       }
+      footer={<ScreenFooter onBack={handleBack} />}
     >
       <ScrollView
         style={styles.scroll}
@@ -327,21 +335,10 @@ export default function StudentAttendanceScreen() {
         showsVerticalScrollIndicator={false}
       >
         {status === ATTENDANCE_STATUS.LOADING ? (
-          <View style={styles.sections}>
-            <View style={styles.totalsGrid}>
-              {SKELETON_TOTALS.map((row) => (
-                <View key={row} style={styles.skeletonTotalCard}>
-                  <Skeleton width="60%" height={16} />
-                  <Skeleton width={32} height={28} />
-                </View>
-              ))}
-            </View>
-
-            <View style={styles.skeletonHistoryCard}>
-              <Skeleton width="35%" height={20} />
-              <Skeleton width="85%" height={14} />
-              <Skeleton width="65%" height={14} />
-            </View>
+          <View style={styles.loadingContainer}>
+            <Skeleton width="40%" height={16} />
+            <Skeleton width="80%" height={24} />
+            <Skeleton width="100%" height={200} />
           </View>
         ) : null}
 
@@ -361,42 +358,100 @@ export default function StudentAttendanceScreen() {
 
         {status === ATTENDANCE_STATUS.SUCCESS && attendance ? (
           <View style={styles.sections}>
-            <View style={styles.totalsGrid}>
-              {TOTAL_CARDS.map((card) => (
-                <AppCard
-                  key={card.key}
-                  title={card.label}
-                  style={styles.totalCard}
-                >
-                  <Text style={styles.totalValue}>
-                    {totals[card.key]}
-                  </Text>
-                </AppCard>
-              ))}
-            </View>
-
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Historial</Text>
-
-                <Text style={styles.sectionCount}>
-                  {recordsCountLabel}
+            {/* Resumen general */}
+            <AppCard style={styles.summaryCard}>
+              <View style={styles.summaryHeader}>
+                <Text style={styles.summaryTitle}>Tu asistencia</Text>
+                <Text style={styles.percentageValue}>
+                  {attendanceRate}%
                 </Text>
               </View>
+              <View style={styles.progressBarContainer}>
+                <View style={styles.progressBarTrack}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      {
+                        width: `${attendanceRate}%`,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.percentageLabel}>
+                  {attended} de {totalClasses} clases
+                </Text>
+</View>
 
-              {sortedRecords.length === 0 ? (
-                <AppCard>
-                  <Text style={styles.emptyText}>
-                    Todavía no hay registros de asistencia.
+              {/* Sándwich de estados de asistencia - tarjetas apiladas */}
+              <View style={styles.sandwichContainer}>
+                {ATTENDANCE_TYPES.map((type) => {
+                  const count = totals[type.key];
+                  const percentage =
+                    totalClasses > 0
+                      ? Math.round((count / totalClasses) * 100)
+                      : 0;
+                  return (
+                    <AppCard
+                      key={type.key}
+                      style={styles.attendanceCard}
+                    >
+                      <View style={styles.attendanceCardContent}>
+                        <View style={styles.attendanceCardLeft}>
+                          <StatusBadge
+                            label={type.icon}
+                            tone={type.tone}
+                          />
+                          <Text style={styles.attendanceLabel}>
+                            {type.label}
+                          </Text>
+                          <Text style={styles.attendanceCount}>
+                            {count} clase{count !== 1 ? "s" : ""}
+                          </Text>
+                        </View>
+                        <View style={styles.attendanceCardRight}>
+                          <Text style={styles.attendancePercentage}>
+                            {count} ({percentage}%)
+                          </Text>
+                          <View style={styles.miniProgressContainer}>
+                            <View style={styles.miniProgressTrack}>
+                              <View
+                                style={[
+                                  styles.miniProgressFill,
+                                  {
+                                    width: `${percentage}%`,
+                                  },
+                                ]}
+                              />
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+                    </AppCard>
+                  );
+                })}
+              </View>
+            </AppCard>
+
+              {/* Historial */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Historial</Text>
+                  <Text style={styles.sectionCount}>
+                    {sortedRecords.length === 1
+                      ? "1 registro"
+                      : `${sortedRecords.length} registros`}
                   </Text>
-                </AppCard>
-              ) : (
-                <View style={styles.list}>
-                  {sortedRecords.map((record, index) => {
-                    const observation =
-                      getRecordObservation(record);
+                </View>
 
-                    return (
+                {sortedRecords.length === 0 ? (
+                  <AppCard>
+                    <Text style={styles.emptyText}>
+                      Todavía no hay registros de asistencia.
+                    </Text>
+                  </AppCard>
+                ) : (
+                  <View style={styles.list}>
+                    {sortedRecords.map((record, index) => (
                       <AppCard
                         key={
                           record.id ??
@@ -407,26 +462,21 @@ export default function StudentAttendanceScreen() {
                         subtitle={getRecordTopic(record)}
                       >
                         <StatusBadge
-                          label={getAttendanceStatusLabel(
-                            record.status
-                          )}
-                          tone={getAttendanceStatusTone(
-                            record.status
-                          )}
+                          label={getAttendanceStatusLabel(record.status)}
+                          tone={getAttendanceStatusTone(record.status)}
                         />
 
-                        {observation ? (
+                        {getRecordObservation(record) ? (
                           <Text style={styles.observation}>
-                            Observación: {observation}
+                            Observación: {getRecordObservation(record)}
                           </Text>
                         ) : null}
                       </AppCard>
-                    );
-                  })}
-                </View>
-              )}
+                    ))}
+                  </View>
+                )}
+              </View>
             </View>
-          </View>
         ) : null}
       </ScrollView>
     </Screen>
@@ -442,10 +492,71 @@ const styles = StyleSheet.create({
     paddingTop: theme.spacing.md,
     paddingBottom: theme.spacing.xl,
     gap: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
   },
 
   sections: {
     gap: theme.spacing.md,
+  },
+
+  summaryCard: {
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    borderRadius: theme.radius.none,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+
+  summaryHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: theme.spacing.md,
+  },
+
+  summaryTitle: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: theme.spacing.sm,
+  },
+
+  percentageContainer: {
+    alignItems: "center",
+    marginBottom: theme.spacing.md,
+  },
+
+  percentageValue: {
+    fontSize: theme.fontSize.xl,
+    fontWeight: "800",
+    color: theme.colors.navy,
+  },
+
+  percentageLabel: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+  },
+
+  progressBarContainer: {
+    width: "100%",
+    height: 8,
+    backgroundColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    overflow: "hidden",
+    marginTop: theme.spacing.sm,
+  },
+
+  progressBarTrack: {
+    backgroundColor: theme.colors.border,
+    height: 8,
+  },
+
+  progressBarFill: {
+    height: "100%",
+    backgroundColor: theme.colors.accent,
+    borderRadius: theme.radius.md,
   },
 
   totalsGrid: {
@@ -457,12 +568,19 @@ const styles = StyleSheet.create({
   totalCard: {
     flexBasis: "47%",
     flexGrow: 1,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    borderRadius: theme.radius.none,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   totalValue: {
-    fontSize: theme.fontSize.xxl,
+    fontSize: theme.fontSize.xl,
     fontWeight: "800",
-    color: theme.colors.primary,
+    color: theme.colors.navy,
   },
 
   section: {
@@ -496,9 +614,9 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
   },
 
-  emptyText: {
+emptyText: {
     color: theme.colors.textSecondary,
-    fontSize: theme.fontSize.sm,
+    textAlign: "center",
   },
 
   feedback: {
@@ -506,23 +624,75 @@ const styles = StyleSheet.create({
     paddingTop: theme.spacing.md,
   },
 
-  skeletonTotalCard: {
-    flexBasis: "47%",
-    flexGrow: 1,
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.md,
-    borderRadius: 0,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    gap: theme.spacing.sm,
+loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: theme.spacing.lg,
   },
 
-  skeletonHistoryCard: {
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.md,
-    borderRadius: 0,
+  /* Estilos para el sándwich de asistencia */
+  sandwichContainer: {
+    gap: theme.spacing.xs,
+    marginTop: theme.spacing.sm,
+  },
+
+  attendanceCard: {
+    padding: theme.spacing.sm,
+    borderRadius: theme.radius.none,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    gap: theme.spacing.sm,
+  },
+
+  attendanceCardContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  attendanceCardLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.xs,
+    flex: 1,
+  },
+
+  attendanceLabel: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: "600",
+    color: theme.colors.text,
+  },
+
+  attendanceCount: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+  },
+
+  attendanceCardRight: {
+    alignItems: "flex-end",
+    gap: 2,
+  },
+
+  attendancePercentage: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: "600",
+    color: theme.colors.text,
+  },
+
+  miniProgressContainer: {
+    width: 80,
+    height: 4,
+  },
+
+  miniProgressTrack: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 2,
+  },
+
+  miniProgressFill: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: theme.colors.accent,
+    borderRadius: 2,
   },
 });

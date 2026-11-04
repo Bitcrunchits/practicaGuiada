@@ -15,6 +15,7 @@ type AppScreenHeaderProps = {
   meta?: string;
   onBack?: () => void;
   showLogo?: boolean;
+  compact?: boolean;
   right?: ReactNode;
 };
 
@@ -24,17 +25,21 @@ export function AppScreenHeader({
   meta,
   onBack,
   showLogo = false,
+  compact = false,
   right,
 }: AppScreenHeaderProps) {
   return (
     <View style={styles.container}>
-      {showLogo ? (
+      {showLogo && !compact ? (
         <View style={styles.logoRow}>
           <AppLogo size="small" />
         </View>
       ) : null}
 
-      <View style={styles.navyBlock}>
+      <View style={[
+        styles.navyBlock,
+        compact && styles.navyBlockCompact,
+      ]}>
         {onBack ? (
           <Pressable
             onPress={onBack}
@@ -48,13 +53,17 @@ export function AppScreenHeader({
 
         <View style={styles.titleRow}>
           <View style={styles.titleContent}>
-            <Text style={styles.title}>{title}</Text>
+            <Text style={[styles.title, compact && styles.titleCompact]}>
+              {title}
+            </Text>
 
             {subtitle ? (
-              <Text style={styles.subtitle}>{subtitle}</Text>
+              <Text style={[styles.subtitle, compact && styles.subtitleCompact]}>
+                {subtitle}
+              </Text>
             ) : null}
 
-            {meta ? <Text style={styles.meta}>{meta}</Text> : null}
+            {meta ? <Text style={[styles.meta, compact && styles.metaCompact]}>{meta}</Text> : null}
           </View>
 
           {right ? <View style={styles.right}>{right}</View> : null}
@@ -86,6 +95,11 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.accent,
   },
 
+  navyBlockCompact: {
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+
   backButton: {
     alignSelf: "flex-start",
     marginBottom: 12,
@@ -115,11 +129,22 @@ const styles = StyleSheet.create({
     lineHeight: 32,
   },
 
+  titleCompact: {
+    fontSize: 22,
+    lineHeight: 28,
+  },
+
   subtitle: {
     fontSize: 15,
     color: "#D7E1EC",
     marginTop: 4,
     lineHeight: 21,
+  },
+
+  subtitleCompact: {
+    fontSize: 14,
+    marginTop: 2,
+    lineHeight: 20,
   },
 
   meta: {
@@ -129,6 +154,11 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: "uppercase",
     marginTop: 8,
+  },
+
+  metaCompact: {
+    fontSize: 10,
+    marginTop: 4,
   },
 
   right: {

@@ -1,32 +1,55 @@
+import { useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 
 import { AppButton } from "@/components/ui/AppButton";
 import { AppCard } from "@/components/ui/AppCard";
 import { AppScreenHeader } from "@/components/ui/AppScreenHeader";
+import { FeedbackState } from "@/components/ui/FeedbackState";
 import { Screen } from "@/components/ui/Screen";
+import { ScreenFooter } from "@/components/ui/ScreenFooter";
 import { useSession } from "@/features/auth/useSession";
 
 export default function StudentHomeScreen() {
   const { user, signOut } = useSession();
+  const [logoutError, setLogoutError] = useState("");
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const signOutInFlight = useRef(false);
 
   const handleLogout = async () => {
-    await signOut();
+    if (signOutInFlight.current) return;
+    signOutInFlight.current = true;
+    setIsSigningOut(true);
+    setLogoutError("");
+
+    try {
+      await signOut();
+    } catch {
+      setLogoutError("No se pudo cerrar la sesión. Intenta nuevamente.");
+      setIsSigningOut(false);
+      signOutInFlight.current = false;
+      return;
+    }
+
     router.replace("/login");
   };
 
+  const handleBack = () => router.back();
+
   const studentName = user?.profile?.firstName ?? "Alumno";
 
-  return (
+return (
     <Screen
       header={
         <AppScreenHeader
-          showLogo
           title="Portal del Alumno"
           subtitle={studentName}
           meta="Alumno"
+          compact
+          onBack={handleBack}
         />
       }
+      footer={<ScreenFooter onBack={handleBack} />}
     >
       <ScrollView
         contentContainerStyle={styles.content}
@@ -34,7 +57,7 @@ export default function StudentHomeScreen() {
       >
         <AppCard
           title="Mis carreras"
-          subtitle="Plan de estudios"
+          subtitle="Plan de estudios e inscripciones"
           onPress={() => router.push("/(private)/student/careers")}
         />
 
@@ -58,10 +81,22 @@ export default function StudentHomeScreen() {
 
         <View style={styles.spacer} />
 
+        {logoutError ? (
+          <View
+            accessible
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+            accessibilityLabel={logoutError}
+          >
+            <FeedbackState type="error" message={logoutError} />
+          </View>
+        ) : null}
+
         <AppButton
           title="Cerrar sesión"
           variant="secondary"
           onPress={handleLogout}
+          loading={isSigningOut}
         />
       </ScrollView>
     </Screen>

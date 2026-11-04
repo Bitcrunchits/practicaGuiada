@@ -11,6 +11,8 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 import { AppButton } from "@/components/ui/AppButton";
+import { AppCard } from "@/components/ui/AppCard";
+import { ScreenFooter } from "@/components/ui/ScreenFooter";
 import { theme } from "@/constants/theme";
 import { useSession } from "@/features/auth/useSession";
 import { getMySubject } from "@/features/student/services/student.service";
@@ -18,6 +20,8 @@ import { StudentSubjectDetail } from "@/features/student/student.types";
 
 export default function StudentSubjectScreen() {
   const { token } = useSession();
+
+  const handleBack = () => router.back();
 
   // Recuperamos los parámetros de la ruta.
   const { careerId, year, subjectId } = useLocalSearchParams<{
@@ -288,15 +292,8 @@ export default function StudentSubjectScreen() {
           </Pressable>
         )}
 
-        {/* Volver */}
-
-        <View style={styles.footer}>
-          <AppButton
-            title="Volver"
-            onPress={() => router.back()}
-          />
-        </View>
       </ScrollView>
+      <ScreenFooter onBack={handleBack} />
     </SafeAreaView>
   );
 }
